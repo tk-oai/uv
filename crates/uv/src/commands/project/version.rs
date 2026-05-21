@@ -336,7 +336,13 @@ pub(crate) async fn project_version(
     let status = if dry_run {
         ExitStatus::Success
     } else if let Some(new_version) = &new_version {
-        let project = update_project(project, new_version, &mut toml, &pyproject_path)?;
+        let project = update_project(
+            project,
+            new_version,
+            &mut toml,
+            &pyproject_path,
+            workspace_cache,
+        )?;
         Box::pin(lock_and_sync(
             project,
             project_dir,
@@ -442,6 +448,7 @@ fn update_project(
     new_version: &Version,
     toml: &mut PyProjectTomlMut,
     pyproject_path: &Path,
+    workspace_cache: &WorkspaceCache,
 ) -> Result<VirtualProject> {
     // Save to disk
     toml.set_version(new_version)?;
@@ -453,6 +460,7 @@ fn update_project(
         .update_member(
             PyProjectToml::from_string(content, pyproject_path)
                 .map_err(ProjectError::PyprojectTomlParse)?,
+            workspace_cache,
         )?
         .ok_or(ProjectError::PyprojectTomlUpdate)?;
 
